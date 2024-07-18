@@ -9,18 +9,7 @@
 <body>
   <div class="container">
 
-
-{% with messages = get_flashed_messages() %}
-{% if messages %} 
-    <ul id="messages" class="list-unstyled">
-    {% for message in messages %}
-        <li class="alert alert-success">{{ message }}</li>
-    {% endfor %}
-    </ul>
-{% endif %}
-{% endwith %}
-
-    <form action="/login" method="POST">
+    <form method="POST">
       <fieldset>
         <label for="name">Nome:</label><br>
         <input type="text" id="fname" name="nome"><br>
@@ -31,7 +20,6 @@
         <input type="submit" value="Enviar" class="btn btn-primary btn-salvar">
       </fieldset>
     </form> 
-    <a href="{{ url_for('cadastrar') }}"><input type="button"  class="btn btn-primary btn-salvar"   value="Faça seu cadastro"></a>
   </div>   
 
    
