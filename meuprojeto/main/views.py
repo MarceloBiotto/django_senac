@@ -59,37 +59,37 @@ def contato(request):
 # @app.route('/login', methods=['GET', 'POST'])
 def login(request):
     if request.method == 'POST':
-        template = loader.get_template('login.html')
-    #     form = ContatoForm(request.POST)
-    #     nome = request.form.get('nome')
-    #     email = request.form.get('email')
-    #     senha = request.form.get('senha')
+        form = ContatoForm(request.POST)
+        nome = request.form.get('nome')
+        email = request.form.get('email')
+        senha = request.form.get('senha')
 
-            
-    #     if not nome or not email or not senha:
-    #         return redirect(url_for('pagina_login'))
+        if not nome or not email or not senha:
+            flash("Todos os campos são obrigatórios.")
+            return redirect(url_for('login'))
 
-    #     bd = conecta_no_banco_de_dados()
-    #     if bd is None:
-            
-    #      return redirect(url_for('pagina_login'))
+        bd = conecta_no_banco_de_dados()
+        if bd is None:
+            flash("Erro ao conectar ao banco de dados.")
+            return redirect(url_for('login'))
 
-    #     cursor = bd.cursor()
-    #     try:
-    #         cursor.execute("SELECT * FROM contatos WHERE nome=%s AND email=%s AND senha=%s", (nome, email, senha))
-    #         user = cursor.fetchone()
-    #         if user:
-    #             session['usuario_id'] = user[0]
-    #             session['usuario_nome'] = user[1]
-    #             flash("Login realizado com sucesso.")
-    #             return redirect(url_for('index'))
-    #         else:
-    #             flash("Usuário ou senha incorretos.")
-    #     except mysql.connector.Error as err:
-    #         flash("Erro ao realizar login: {}".format(err))
-    #     finally:
-    #         cursor.close()
-    #         bd.close()
+        cursor = bd.cursor()
+        try:
+            cursor.execute("SELECT * FROM contatos WHERE nome=%s AND email=%s AND senha=%s", (nome, email, senha))
+            user = cursor.fetchone()
+            if user:
+                session['usuario_id'] = user[0]
+                session['usuario_nome'] = user[1]
+                flash("Login realizado com sucesso.")
+                return redirect(url_for('index'))
+            else:
+                flash("Usuário ou senha incorretos.")
+        except mysql.connector.Error as err:
+            flash("Erro ao realizar login: {}".format(err))
+        finally:
+            cursor.close()
+            bd.close()
 
-    return HttpResponse(template.render(request))
-    # return render(request, 'login.html')
+    
+
+    return render(request, 'login.html', {'form': form})
