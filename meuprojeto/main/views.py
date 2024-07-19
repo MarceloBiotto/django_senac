@@ -101,4 +101,46 @@ def login(request):
         form = ContatoForm()
         return render(request, 'Login/login.html', {'form': form})
     
-  
+
+def cadastrar(request):
+    nome = request.form.get('nome')
+    email = request.form.get('email')
+    senha = request.form.get('senha')
+
+    # Validação
+    if not nome:
+        print('O nome é obrigatório.')
+        return render('cadastrar.html')
+    if not email:
+        print('O e-mail é obrigatório.')
+        return render('cadastrar.html')
+    if not senha:
+        print('A senha é obrigatória.')
+        return render('cadastrar.html')
+
+    bd = conecta_no_banco_de_dados()
+    cursor = bd.cursor()
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM contatos
+        WHERE email = %s;
+    """, (email,))
+    existe = cursor.fetchone()[0]
+    cursor.close()
+    bd.close()
+
+    if existe > 0:
+        print('Email já cadastrado')
+        return render('cadastrar.html')
+    else:
+        try:
+            bd = conecta_no_banco_de_dados()
+            cursor = bd.cursor()
+            sql = 'INSERT INTO contatos (nome, email, senha) VALUES (%s, %s, %s)'
+            values = (nome, email, senha)
+            cursor.execute(sql, values)
+            bd.commit()
+            cursor.close()
+            return redirect('login')
+        except mysql.connector.Error as e:
+            return render('cadastrar.html', error=str(e))
