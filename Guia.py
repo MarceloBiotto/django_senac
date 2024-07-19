@@ -61,3 +61,11 @@
 
 
 
+# pip install mysqlclient
+
+# python manage.py migrate
+# python manage.py createsuperuser
+# python manage.py runserver
+
+# Email address: marcelocardosoconsultoria@gmail.com
+# Password: a de sempre só numeral sem o 8 final
