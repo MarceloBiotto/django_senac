@@ -26,4 +26,6 @@ urlpatterns = [
     path('contato/', views.contato, name='contato'),
     path('login', views.login,name='login'),
     path('cadastrar/', views.cadastrar,name='cadastrar'),
+    path('atualizarUsuario/<int:id>/', views.atualizarUsuario, name='atualizarUsuario'),
+    path('validaLogin', views.validaLogin, name= 'validaLogin'),
 ]

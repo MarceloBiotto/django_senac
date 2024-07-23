@@ -103,9 +103,9 @@ def login(request):
     
 
 def cadastrar(request):
-    # if not request.session.get('usuario_id'):
-    #     return redirect('login')
-    # else:
+    if not request.session.get('usuario_id'):
+        return redirect('login')
+    else:
         if request.method == 'POST':
             nome = request.POST.get('nome')
             email = request.POST.get('email')
@@ -138,4 +138,75 @@ def cadastrar(request):
             # Exiba o formulário (assumindo lógica de renderização)
         return render(request, 'Cadastrar/cadastrar.html')            
 
+
+
+# @app.route('/validalogin', methods=['POST', 'GET'])
+def validaLogin(request):
+    nome = request.form.get('nome')
+    email = request.form.get('email')
+    senha = request.form.get('senha')
+
+   
+    bd = conecta_no_banco_de_dados()
+    cursor = bd.cursor()
+    cursor.execute("""
+        SELECT *
+        FROM contatos
+        WHERE nome = %s AND email = %s AND senha = %s;
+    """, (nome, email, senha))
+    usuario = cursor.fetchone()
+    cursor.close()
+    bd.close()
+
+    if usuario:
+        # Login bem-sucedido
+        request.session.get['usuario_id'] = usuario[0]
+        request.session.get['usuario_nome'] = usuario[1]
+        print(f"{request.session.get['usuario_nome']} logado com sucesso!")
+        return render('Sobre/sobre.html') ##enviarei mesmo o login bem sucedito momentaneamente para a pagina sobre, apos isso verificarei alguma forma melhor de organizar essa página
+    else:
+        # Login inválido
+        return render('validaLogin')
+  
             
+def atualizarUsuario(request,id):
+    if not request.session.get('usuario_id'): 
+        return redirect('login')
+    else:
+        id_usuario = id
+        bd = conecta_no_banco_de_dados()
+        cursor = bd.cursor()
+        cursor.execute("""
+            SELECT id, nome, email
+            FROM usuarios
+            WHERE id = %s;
+        """, (id,))
+        dados_usuario = cursor.fetchone()
+        cursor.close()
+        bd.close()
+        if request.method == 'POST':
+            nome = request.POST.get('nome')
+            email = request.POST.get('email')
+            senha = request.POST.get('senha')    
+            if not all([nome, email, senha]):
+                return render(request, 'sobre.html')
+            bd = conecta_no_banco_de_dados()
+            cursor = bd.cursor()
+            sql = (
+                """
+                UPDATE usuarios
+                SET nome = %s, email = %s, senha = %s
+                WHERE id = %s;
+                """
+            )
+            values = (nome, email, senha, id)
+            cursor.execute(sql, values)
+            bd.commit()  # Assumindo que você tenha gerenciamento de transações
+            cursor.close()
+            bd.close()
+
+            # Redirecione para a página de sucesso ou exiba a mensagem de confirmação
+            return redirect('paginainicial')     
+
+        # Exiba o formulário (assumindo lógica de renderização)
+        return render(request, 'atualizarUsuario.html',{'id': id_usuario})
