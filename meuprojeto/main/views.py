@@ -135,7 +135,7 @@ def cadastrar(request):
             # Redirecione para a página de sucesso ou exiba a mensagem de confirmação
             return redirect('sobre') ##envio para a pagina de sobre momentaneamente     
 
-        # Exiba o formulário (assumindo lógica de renderização)
-        return render(request, 'cadastrar.html')            
+            # Exiba o formulário (assumindo lógica de renderização)
+        return render(request, 'Cadastrar/cadastrar.html')            
 
             
