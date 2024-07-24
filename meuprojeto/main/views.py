@@ -142,22 +142,33 @@ def cadastrar(request):
 
 # @app.route('/validalogin', methods=['POST', 'GET'])
 def validaLogin(request):
-    nome = request.form.get('nome')
-    email = request.form.get('email')
-    senha = request.form.get('senha')
-
-   
-    bd = conecta_no_banco_de_dados()
-    cursor = bd.cursor()
-    cursor.execute("""
-        SELECT *
-        FROM contatos
-        WHERE nome = %s AND email = %s AND senha = %s;
-    """, (nome, email, senha))
-    usuario = cursor.fetchone()
-    cursor.close()
-    bd.close()
-
+    if request.method == 'POST':
+     form = ContatoForm(request.POST)
+     if form.is_valid():
+        try:
+            nome = request.form.get('nome')
+            email = request.form.get('email')
+            senha = request.form.get('senha')
+            bd = conecta_no_banco_de_dados()
+            cursor = bd.cursor()
+            cursor.execute("""
+                SELECT *
+                FROM contatos
+                WHERE nome = %s AND email = %s AND senha = %s;
+                """, (nome, email, senha))
+            usuario = cursor.fetchone()
+            cursor.close()
+            bd.close()
+        except Exception as err:
+                # Manipular erros de banco de dados
+                print(f"Erro ao salvar dados no banco de dados: {err}")
+                mensagem_erro = "Ocorreu um erro ao processar o seu contato. Tente novamente mais tarde."
+                return render(request, 'erro.html', mensagem_erro=mensagem_erro), 500
+        finally:
+            # Fechar conexão com o banco de dados se estiver aberta
+            if bd is not None:
+                bd.close()
+            
     if usuario:
         # Login bem-sucedido
         request.session.get['usuario_id'] = usuario[0]
@@ -189,7 +200,7 @@ def atualizarUsuario(request,id):
             email = request.POST.get('email')
             senha = request.POST.get('senha')    
             if not all([nome, email, senha]):
-                return render(request, 'sobre.html')
+                return render(request, 'login.html')
             bd = conecta_no_banco_de_dados()
             cursor = bd.cursor()
             sql = (
@@ -206,7 +217,7 @@ def atualizarUsuario(request,id):
             bd.close()
 
             # Redirecione para a página de sucesso ou exiba a mensagem de confirmação
-            return redirect('paginainicial')     
+            return redirect('sobre.html')     
 
         # Exiba o formulário (assumindo lógica de renderização)
         return render(request, 'atualizarUsuario.html',{'id': id_usuario})
