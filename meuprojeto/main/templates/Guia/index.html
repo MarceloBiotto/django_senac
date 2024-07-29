@@ -3,17 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio</title>
+    <title>Início</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body>
-    <header> 
-        <button><a href="/contato">Preencha o formulario!</a></button>
-        <button><a href="./sobre">Sobre</a></button>
-        <button><a href="./login">Login</a></button>
-    </header>
-    <h1>Aqui jas o inicio do inicio</h1>
-    <p> iniciando a jornada.</p>
-    <p>hellow world!</p>
-    
+    <div class="container">
+        <header>
+            <nav>
+                <button><a href="/contato">Contato</a></button>
+                <button><a href="/sobre">Sobre</a></button>
+                <button><a href="/login">Login</a></button>
+            </nav>
+        </header>
+        <main>
+            <h1>Bem-vindo à nossa página de apostas!</h1>
+            <p>Aqui você pode fazer suas apostas de forma simples e rápida.</p>
+            <p>Comece sua jornada agora mesmo!</p>
+        </main>
+    </div>
 </body>
 </html>

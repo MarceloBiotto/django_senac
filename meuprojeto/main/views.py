@@ -1,218 +1,257 @@
-from django.http import HttpResponseRedirect
-from django.shortcuts import render,redirect
+from django.shortcuts import render, redirect
 from main.bd_config import conecta_no_banco_de_dados
 from .forms import ContatoForm
-from django.http import HttpResponse
-from django.template import loader
+from .decorators import validate_login
+from django.shortcuts import render, redirect
+from .forms import ContatoForm  
+from .bd_config import conecta_no_banco_de_dados
+
 
 def index(request):
     return render(request, 'Guia/index.html')
+
 def sobre(request):
     return render(request, 'Sobre/sobre.html')
 
+@validate_login
 def contato(request):
     if request.method == 'POST':
         form = ContatoForm(request.POST)
         if form.is_valid():
             try:
-                # Estabelecer conexão com o banco de dados
                 bd = conecta_no_banco_de_dados()
-
-                # Preparar consulta SQL e valores
                 nome = form.cleaned_data['nome']
                 email = form.cleaned_data['email']
                 mensagem = form.cleaned_data['mensagem']
                 sql = "INSERT INTO contatos (nome, email, mensagem) VALUES (%s, %s, %s)"
                 values = (nome, email, mensagem)
-
-                # Executar consulta SQL e confirmar alterações
                 cursor = bd.cursor()
                 cursor.execute(sql, values)
                 bd.commit()
-
-                # Mensagem de sucesso e redirecionamento
                 print(f"Dados do formulário salvos com sucesso!")
                 return HttpResponseRedirect('/')
-
             except Exception as err:
-                # Manipular erros de banco de dados
                 print(f"Erro ao salvar dados no banco de dados: {err}")
                 mensagem_erro = "Ocorreu um erro ao processar o seu contato. Tente novamente mais tarde."
-                return render(request, 'erro.html', mensagem_erro=mensagem_erro), 500
-
+                return render(request, 'erro.html', {'mensagem_erro': mensagem_erro})
             finally:
-                # Fechar conexão com o banco de dados se estiver aberta
                 if bd is not None:
                     bd.close()
-
         else:
-            # Manipular dados de formulário inválidos
             return render(request, 'contato.html', {'form': form})
-
     else:
-        # Renderizar formulário vazio
         form = ContatoForm()
         return render(request, 'contato.html', {'form': form})
-    
-    
-    
-# @app.route('/login', methods=['GET', 'POST'])
+
 def login(request):
-    request.session['usuario_id'] =""
-        # form = ContatoForm(request.POST)
-        # if form.is_valid():
-    try:
-            if request.method == 'POST':
-                # Estabelecer conexão com o banco de dados
-                bd = conecta_no_banco_de_dados()
-                nome = request.POST['nome']
-                senha = request.POST['senha']
-                email = request.POST['email']
-                # sql = "INSERT INTO contatos (nome, email, mensagem) VALUES (%s, %s, %s)"
-                # values = (nome, email, mensagem)
-
-                # Executar consulta SQL e confirmar alterações
-                cursor = bd.cursor()
-                cursor.execute("""
-                        SELECT *
-                        FROM usuarios
-                        WHERE email = %s AND senha = %s;
-                    """, (nome,email, senha,))
-            usuario = cursor.fetchone()
-            cursor.close()
-            bd.close()
-            if usuario:
-                request.session['usuario_id'] = usuario[0]  # Iniciar sessão do usuário
-                
-              
-                return redirect('sobre.html')                   
-            else:
-                print('Email ou senha inválidos.')
-                    # Autenticação falhou, exibir mensagem de erro
-                mensagem_erro = 'Email ou senha inválidos.'
-                return render(request, 'login.html', {'mensagem_erro': mensagem_erro})
-    except Exception as e:
-            # Se ocorrer um erro de conexão, exibir mensagem de erro
-            mensagem_erro = f"Erro ao conectar ao banco de dados: {e}"
-            return render(request, 'login', {'mensagem_erro': mensagem_erro})
-    
-
-def cadastrar(request):
-    # if not request.session.get('usuario_id'):
-    #     return redirect('login')
-    # else:
-        if request.method == 'POST':
-            nome = request.POST.get('nome')
-            email = request.POST.get('email')
-            senha = request.POST.get('senha')
-          
-      
-            # Valide a entrada (assumindo lógica de validação)
-            if not all([nome, email, senha]):
-                # Lide com erros de validação (por exemplo, exiba mensagens de erro)
-                return render(request, 'cadastrar.html')
-
-            # Atualize os dados do usuário se a validação for aprovada
-            bd = conecta_no_banco_de_dados()
-            cursor = bd.cursor()
-            sql = (
-                """
-                INSERT INTO usuarios
-                SET nome = %s, email = %s, senha = %s;
-                """
-            )
-            values = (nome, email, senha)
-            cursor.execute(sql, values)
-            bd.commit()  # Assumindo que você tenha gerenciamento de transações
-            cursor.close()
-            bd.close()
-
-            # Redirecione para a página de sucesso ou exiba a mensagem de confirmação
-            return redirect('sobre') ##envio para a pagina de sobre momentaneamente     
-
-            # Exiba o formulário (assumindo lógica de renderização)
-        return render(request, 'Cadastrar/cadastrar.html')            
-
-
-
-# @app.route('/validalogin', methods=['POST', 'GET'])
-def validaLogin(request):
+    request.session['usuario_id'] = ""
     if request.method == 'POST':
-     form = ContatoForm(request.POST)
-     if form.is_valid():
         try:
-            nome = request.form.get('nome')
-            email = request.form.get('email')
-            senha = request.form.get('senha')
             bd = conecta_no_banco_de_dados()
             cursor = bd.cursor()
+            nome = request.POST['nome']
+            senha = request.POST['senha']
+            email = request.POST['email']
+            
             cursor.execute("""
                 SELECT *
-                FROM contatos
-                WHERE nome = %s AND email = %s AND senha = %s;
-                """, (nome, email, senha))
+                FROM usuarios
+                WHERE email = %s AND senha = %s;
+            """, (email, senha))
             usuario = cursor.fetchone()
+            
+            if usuario:
+                request.session['usuario_id'] = usuario[0]
+                return redirect('apostar')  
+            else:
+                mensagem_erro = 'Email ou senha inválidos.'
+                return render(request, 'Login/login.html', {'mensagem_erro': mensagem_erro})
+        except Exception as e:
+            mensagem_erro = f"Erro ao conectar ao banco de dados: {e}"
+            return render(request, 'Login/login.html', {'mensagem_erro': mensagem_erro})
+        finally:
             cursor.close()
             bd.close()
-        except Exception as err:
-                # Manipular erros de banco de dados
-                print(f"Erro ao salvar dados no banco de dados: {err}")
-                mensagem_erro = "Ocorreu um erro ao processar o seu contato. Tente novamente mais tarde."
-                return render(request, 'erro.html', mensagem_erro=mensagem_erro), 500
-        finally:
-            # Fechar conexão com o banco de dados se estiver aberta
-            if bd is not None:
-                bd.close()
+    return render(request, 'Login/login.html')
+
+def cadastrar(request):
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        email = request.POST.get('email')
+        senha = request.POST.get('senha')
+
+        
+        if not all([nome, email, senha]):
+            mensagem_erro = 'Todos os campos são obrigatórios.'
+            return render(request, 'Cadastrar/cadastrar.html', {'mensagem_erro': mensagem_erro})
+
+        try:
             
-        if usuario:
-            # Login bem-sucedido
-            request.get['usuario_id'] = usuario[0]
-            request.get['usuario_nome'] = usuario[1]
-            print(f"{request.get['usuario_nome']} logado com sucesso!")
-            return render('Sobre/sobre.html') ##enviarei mesmo o login bem sucedito momentaneamente para a pagina sobre, apos isso verificarei alguma forma melhor de organizar essa página
-        else:
-            # Login inválido
-            return render('validaLogin')
-  
-            
-def atualizarUsuario(request,id):
-    if not request.get('usuario_id'): 
-        return redirect('Login/login')
-    else:
-        id_usuario = id
-        bd = conecta_no_banco_de_dados()
-        cursor = bd.cursor()
-        cursor.execute("""
-            SELECT id, nome, email
-            FROM usuarios
-            WHERE id = %s;
-        """, (id,))
-        dados_usuario = cursor.fetchone()
-        cursor.close()
-        bd.close()
-        if request.method == 'POST':
-            nome = request.POST.get('nome')
-            email = request.POST.get('email')
-            senha = request.POST.get('senha')    
-            if not all([nome, email, senha]):
-                return render(request, 'Login/login')
             bd = conecta_no_banco_de_dados()
             cursor = bd.cursor()
-            sql = (
-                """
-                UPDATE usuarios
-                SET nome = %s, email = %s, senha = %s
-                WHERE id = %s;
-                """
-            )
-            values = (nome, email, senha, id)
-            cursor.execute(sql, values)
-            bd.commit()  # Assumindo que você tenha gerenciamento de transações
+            sql = """
+                INSERT INTO usuarios (nome, email, senha)
+                VALUES (%s, %s, %s);
+            """
+            valores = (nome, email, senha)
+            cursor.execute(sql, valores)
+            bd.commit()
             cursor.close()
             bd.close()
+            
+            request.session['usuario_id'] = cursor.lastrowid 
+            return redirect('apostar')  
+        except Exception as e:
+            mensagem_erro = f"Erro ao cadastrar usuário: {e}"
+            return render(request, 'Cadastrar/cadastrar.html', {'mensagem_erro': mensagem_erro})
+    else:
+    
+        return render(request, 'Cadastrar/cadastrar.html')
 
-            # Redirecione para a página de sucesso ou exiba a mensagem de confirmação
-            return redirect('sobre.html')     
 
-        # Exiba o formulário (assumindo lógica de renderização)
-        return render(request, 'atualizarUsuario.html',{'id': id_usuario})
+@validate_login
+def atualizarUsuario(request, id):
+    bd = conecta_no_banco_de_dados()
+    cursor = bd.cursor()
+    cursor.execute("""
+        SELECT id, nome, email
+        FROM usuarios
+        WHERE id = %s;
+    """, (id,))
+    dados_usuario = cursor.fetchone()
+    cursor.close()
+    bd.close()
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        email = request.POST.get('email')
+        senha = request.POST.get('senha')
+        if not all([nome, email, senha]):
+            return render(request, 'AtualizarUsuario/atualizarUsuario.html', {'id': id})
+        bd = conecta_no_banco_de_dados()
+        cursor = bd.cursor()
+        sql = "UPDATE usuarios SET nome = %s, email = %s, senha = %s WHERE id = %s"
+        values = (nome, email, senha, id)
+        cursor.execute(sql, values)
+        bd.commit()
+        cursor.close()
+        bd.close()
+        return redirect('sobre')
+    return render(request, 'AtualizarUsuario/atualizarUsuario.html', {'id': id, 'dados_usuario': dados_usuario})
+
+@validate_login
+def logout(request):
+    request.session.flush()
+    return redirect('login')
+@validate_login
+@validate_login
+def apostar(request):
+    try:
+        bd = conecta_no_banco_de_dados()
+        cursor = bd.cursor()
+        
+        cursor.execute("SELECT id, nome FROM usuarios")
+        usuarios = cursor.fetchall()
+        
+        if len(usuarios) < 2:
+            mensagem_erro = "Não há usuários suficientes para realizar uma aposta."
+            return render(request, 'apostar.html', {'mensagem_erro': mensagem_erro})
+        
+        import random
+        
+        jogador1, jogador2 = random.sample(usuarios, 2)
+        
+        
+        vencedor = random.choice([jogador1, jogador2])
+        perdedor = jogador1 if vencedor == jogador2 else jogador2
+        
+       
+        resultado = {
+            'vencedor': {'id': vencedor[0], 'nome': vencedor[1]},
+            'perdedor': {'id': perdedor[0], 'nome': perdedor[1]},
+        }
+
+        return render(request, 'apostar.html', {'resultado': resultado})
+    
+    except Exception as e:
+        mensagem_erro = f"Erro ao acessar o banco de dados: {e}"
+        return render(request, 'apostar.html', {'mensagem_erro': mensagem_erro})
+    
+    finally:
+        if bd is not None:
+            bd.close()
+
+
+def registrar_resultado(contato_id, resultado):
+    try:
+        bd = conecta_no_banco_de_dados()
+        cursor = bd.cursor()
+
+        if resultado == 'vitoria':
+            cursor.execute('UPDATE placar SET vitorias = vitorias + 1 WHERE contatos = %s;', (contato_id,))
+        elif resultado == 'derrota':
+            cursor.execute('UPDATE placar SET derrotas = derrotas + 1 WHERE contatos = %s;', (contato_id,))
+        else:
+            raise ValueError('Resultado inválido.')
+
+        bd.commit()
+        cursor.close()
+
+    except mysql.connector.Error as err:
+        print("Erro ao atualizar placar:", err)
+    finally:
+        if bd is not None:
+            bd.close()
+
+@validate_login
+def atualizar_usuario(request, id):
+    bd = conecta_no_banco_de_dados()
+    cursor = bd.cursor()
+    
+    
+    cursor.execute("SELECT id, nome, email FROM usuarios WHERE id = %s", (id,))
+    usuario = cursor.fetchone()
+    
+    if not usuario:
+        return HttpResponse("Usuário não encontrado.", status=404)
+
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        email = request.POST.get('email')
+        senha = request.POST.get('senha', '')  
+
+        
+        cursor.execute("""
+            UPDATE usuarios 
+            SET nome = %s, email = %s, senha = %s
+            WHERE id = %s
+        """, (nome, email, senha, id))
+        bd.commit()
+        cursor.close()
+        bd.close()
+        return redirect('sobre')  
+
+    cursor.close()
+    bd.close()
+    return render(request, 'AtualizarUsuario/atualizarUsuario.html', {'usuario': usuario})
+
+
+
+@validate_login
+def deletar_usuario(request, id):
+    bd = conecta_no_banco_de_dados()
+    cursor = bd.cursor()
+
+    
+    cursor.execute("SELECT id FROM usuarios WHERE id = %s", (id,))
+    usuario = cursor.fetchone()
+
+    if not usuario:
+        return HttpResponse("Usuário não encontrado.", status=404)
+
+    
+    cursor.execute("DELETE FROM usuarios WHERE id = %s", (id,))
+    bd.commit()
+    cursor.close()
+    bd.close()
+
+    return redirect('sobre')  
